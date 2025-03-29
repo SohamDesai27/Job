@@ -2,10 +2,10 @@ import csv
 from jobspy import scrape_jobs
 
 # General IT search term
-search_term_query = "Information Technology OR IT"
+search_term_query = "Technical Operations"
 
 # Google-specific query
-google_search_term_query = "entry level and mid level Information Technology jobs"
+google_search_term_query = "entry level and mid level Technical Operations jobs"
 
 # Scrape jobs
 jobs = scrape_jobs(
