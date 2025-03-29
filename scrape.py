@@ -1,23 +1,34 @@
 import csv
 from jobspy import scrape_jobs
 
+# General IT search term
+search_term_query = "Information Technology OR IT"
+
+# Google-specific query
+google_search_term_query = "entry level and mid level Information Technology jobs"
+
+# Scrape jobs
 jobs = scrape_jobs(
     site_name=["indeed", "linkedin", "zip_recruiter", "glassdoor", "google"],
-    # site_name=["linkedin"],
-    search_term = (
-    "entry level DevOps engineer"
-),
-    google_search_term = "entry level and mid level DevOps engineer jobs",
+    search_term=search_term_query,
+    google_search_term=google_search_term_query,
     location="United States",
     results_wanted=500,
-    hours_old=10,
+    hours_old=48,            # Jobs posted in the last 10 hours
     country_indeed='USA',
     job_type='fulltime',
-    linkedin_fetch_description=True, # gets more info such as description, direct job url (slower)
-    # proxies=["208.195.175.46:65095", "208.195.175.45:65095", "localhost"],
-
+    linkedin_fetch_description=True,
     verbose=2
 )
-print(f"Found {len(jobs)} jobs")
+
+# Print results to console
+print(f"Found {len(jobs)} jobs.")
 print(jobs.head())
-jobs.to_csv("jobs.csv", quoting=csv.QUOTE_NONNUMERIC, escapechar="\\", index=False) # to_excel
+
+# Save to CSV
+jobs.to_csv(
+    "jobs.csv",
+    quoting=csv.QUOTE_NONNUMERIC,
+    escapechar="\\",
+    index=False
+)
