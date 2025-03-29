@@ -23,14 +23,14 @@ def main():
 
     # Example filters you can keep or remove:
     filter_title = [
-        'citizenship', 'senior', 'lead', 'Sr', '.Net',
+        'citizenship', 'senior', 'lead', 'Sr',
         'Clearance', 'Secret', 'Manager', 'Mgr',
         'US Citizen', 'Principal', 'Embedded', 'HVAC', 'Staff'
     ]
     filter_description = [
         'citizenship', 'Clearance', 'Secret', 'TS/SCI', 'Citizen'
     ]
-    filter_companies = ["Sreekar's company"]
+    filter_companies = ["Soham's company"]
 
     # Apply the filters
     jobs_filtered = jobs[~(
