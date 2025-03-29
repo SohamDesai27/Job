@@ -4,8 +4,10 @@ from jobspy import scrape_jobs
 jobs = scrape_jobs(
     site_name=["indeed", "linkedin", "zip_recruiter", "glassdoor", "google"],
     # site_name=["linkedin"],
-    search_term="software engineer",
-    google_search_term="entry level and mid level software engineer jobs",
+    search_term = (
+    "entry level DevOps engineer"
+),
+    google_search_term = "entry level and mid level DevOps engineer jobs",
     location="United States",
     results_wanted=500,
     hours_old=10,
