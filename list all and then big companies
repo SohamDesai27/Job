@@ -4,21 +4,25 @@ import streamlit as st
 import os
 from jobspy import scrape_jobs
 
-st.set_page_config(page_title="DevOps Job Finder", layout="wide")
-st.title("🔧 DevOps & Infrastructure Jobs Across the U.S.")
+st.set_page_config(page_title="Helper", layout="wide")
+st.title("💼 Helper – Tech/Infra Job Scraper & Filter")
 
 # Function to scrape and filter jobs
 def fetch_and_filter_jobs():
-    search_term_query = "DevOps OR SRE OR Platform Engineer OR Infrastructure OR Automation"
-    google_search_term_query = "DevOps Engineer, Site Reliability Engineer, Platform Engineer"
+    # ✅ Broader search coverage
+    search_term_query = (
+        "business analyst"
+    )
+
+    google_search_term_query = search_term_query
 
     jobs = scrape_jobs(
         site_name=["linkedin", "indeed", "glassdoor", "google"],
         search_term=search_term_query,
         google_search_term=google_search_term_query,
         location="United States",
-        results_wanted=1000,
-        hours_old=72,
+        results_wanted=500,
+        hours_old=48,
         country_indeed="USA",
         job_type="fulltime",
         linkedin_fetch_description=True,
@@ -28,32 +32,47 @@ def fetch_and_filter_jobs():
     # Save raw data
     jobs.to_csv("all_scraped_jobs.csv", quoting=csv.QUOTE_NONNUMERIC, escapechar="\\", index=False)
 
-    # Filter for DevOps jobs
-    devops_keywords = [
-        "devops", "site reliability", "sre", "platform engineer", "cloud ops",
-        "infrastructure", "ci/cd", "automation", "systems engineer", "cloud engineer"
-    ]
-    jobs_filtered = jobs[
-        jobs["title"].str.lower().str.contains("|".join(devops_keywords), na=False) |
-        jobs["description"].str.lower().str.contains("|".join(devops_keywords), na=False)
+    # ✅ Match jobs semantically based on title/description
+    job_keywords = [
+        "business analyst"
     ]
 
+    jobs_filtered = jobs[
+        jobs["title"].str.lower().str.contains("|".join(job_keywords), na=False) |
+        jobs["description"].str.lower().str.contains("|".join(job_keywords), na=False)
+    ]
+
+    # ❌ Exclude jobs with undesirable terms in title/description
+    filter_title = [
+        'citizenship', 'senior', 'lead', 'sr',
+        'clearance', 'secret', 'manager', 'mgr',
+        'us citizen', 'principal', 'embedded', 'hvac', 'staff'
+    ]
+    filter_description = [
+        'citizenship', 'clearance', 'secret', 'ts/sci', 'citizen'
+    ]
+
+    jobs_filtered = jobs_filtered[~(
+        jobs_filtered['title'].str.lower().str.contains('|'.join(filter_title), na=False) |
+        jobs_filtered['description'].str.lower().str.contains('|'.join(filter_description), na=False)
+    )]
+
     # Save filtered data
-    jobs_filtered.to_csv("devops_jobs_all_companies.csv", quoting=csv.QUOTE_NONNUMERIC, escapechar="\\", index=False)
+    jobs_filtered.to_csv("tech_infra_jobs_filtered.csv", quoting=csv.QUOTE_NONNUMERIC, escapechar="\\", index=False)
 
     return jobs_filtered
 
 # Try to load from saved file if it exists
 jobs_df = None
-if os.path.exists("devops_jobs_all_companies.csv"):
-    jobs_df = pd.read_csv("devops_jobs_all_companies.csv")
-    st.success(f"📄 Loaded {len(jobs_df)} previously scraped DevOps jobs from file.")
+if os.path.exists("tech_infra_jobs_filtered.csv"):
+    jobs_df = pd.read_csv("tech_infra_jobs_filtered.csv")
+    st.success(f"📄 Loaded {len(jobs_df)} previously scraped tech/infra jobs from file.")
 
 # Scrape fresh data only when button is clicked
-if st.button("🔍 Scrape Latest DevOps Jobs"):
+if st.button("🔍 Scrape Latest Tech/Infra Jobs"):
     with st.spinner("Scraping and filtering jobs..."):
         jobs_df = fetch_and_filter_jobs()
-    st.success(f"✅ Scraped and found {len(jobs_df)} DevOps-related jobs!")
+    st.success(f"✅ Scraped and found {len(jobs_df)} relevant jobs!")
 
 # Display if jobs are available
 if jobs_df is not None:
@@ -68,12 +87,11 @@ if jobs_df is not None:
         big_companies = company_counts[company_counts >= threshold].index.tolist()
         display_df = display_df[display_df["company"].isin(big_companies)]
         st.info(f"Showing {len(display_df)} jobs from top-posting companies.")
-
     else:
-        st.info(f"Showing all {len(display_df)} DevOps jobs.")
+        st.info(f"Showing all {len(display_df)} relevant jobs.")
 
     # Download button
-    st.download_button("⬇️ Download CSV", data=display_df.to_csv(index=False), file_name="devops_jobs_filtered.csv")
+    st.download_button("⬇️ Download CSV", data=display_df.to_csv(index=False), file_name="tech_jobs_filtered.csv")
 
     # Display table
     columns_to_display = ['title', 'company', 'location', 'job_url', 'date_posted']
