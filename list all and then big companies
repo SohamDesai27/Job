@@ -1,0 +1,84 @@
+import csv
+import pandas as pd
+import streamlit as st
+import os
+from jobspy import scrape_jobs
+
+st.set_page_config(page_title="DevOps Job Finder", layout="wide")
+st.title("🔧 DevOps & Infrastructure Jobs Across the U.S.")
+
+# Function to scrape and filter jobs
+def fetch_and_filter_jobs():
+    search_term_query = "DevOps OR SRE OR Platform Engineer OR Infrastructure OR Automation"
+    google_search_term_query = "DevOps Engineer, Site Reliability Engineer, Platform Engineer"
+
+    jobs = scrape_jobs(
+        site_name=["linkedin", "indeed", "glassdoor", "google"],
+        search_term=search_term_query,
+        google_search_term=google_search_term_query,
+        location="United States",
+        results_wanted=1000,
+        hours_old=72,
+        country_indeed="USA",
+        job_type="fulltime",
+        linkedin_fetch_description=True,
+        verbose=1
+    )
+
+    # Save raw data
+    jobs.to_csv("all_scraped_jobs.csv", quoting=csv.QUOTE_NONNUMERIC, escapechar="\\", index=False)
+
+    # Filter for DevOps jobs
+    devops_keywords = [
+        "devops", "site reliability", "sre", "platform engineer", "cloud ops",
+        "infrastructure", "ci/cd", "automation", "systems engineer", "cloud engineer"
+    ]
+    jobs_filtered = jobs[
+        jobs["title"].str.lower().str.contains("|".join(devops_keywords), na=False) |
+        jobs["description"].str.lower().str.contains("|".join(devops_keywords), na=False)
+    ]
+
+    # Save filtered data
+    jobs_filtered.to_csv("devops_jobs_all_companies.csv", quoting=csv.QUOTE_NONNUMERIC, escapechar="\\", index=False)
+
+    return jobs_filtered
+
+# Try to load from saved file if it exists
+jobs_df = None
+if os.path.exists("devops_jobs_all_companies.csv"):
+    jobs_df = pd.read_csv("devops_jobs_all_companies.csv")
+    st.success(f"📄 Loaded {len(jobs_df)} previously scraped DevOps jobs from file.")
+
+# Scrape fresh data only when button is clicked
+if st.button("🔍 Scrape Latest DevOps Jobs"):
+    with st.spinner("Scraping and filtering jobs..."):
+        jobs_df = fetch_and_filter_jobs()
+    st.success(f"✅ Scraped and found {len(jobs_df)} DevOps-related jobs!")
+
+# Display if jobs are available
+if jobs_df is not None:
+    # Filter toggle
+    big_companies_only = st.checkbox("🏢 Show only jobs from big companies", value=False)
+
+    # Apply big company filter if selected
+    display_df = jobs_df.copy()
+    if big_companies_only:
+        company_counts = display_df["company"].value_counts()
+        threshold = company_counts.quantile(0.95)  # Top 5% most frequent
+        big_companies = company_counts[company_counts >= threshold].index.tolist()
+        display_df = display_df[display_df["company"].isin(big_companies)]
+        st.info(f"Showing {len(display_df)} jobs from top-posting companies.")
+
+    else:
+        st.info(f"Showing all {len(display_df)} DevOps jobs.")
+
+    # Download button
+    st.download_button("⬇️ Download CSV", data=display_df.to_csv(index=False), file_name="devops_jobs_filtered.csv")
+
+    # Display table
+    columns_to_display = ['title', 'company', 'location', 'job_url', 'date_posted']
+    valid_columns = [col for col in columns_to_display if col in display_df.columns]
+    st.dataframe(display_df[valid_columns], use_container_width=True)
+
+else:
+    st.info("Click the button above to scrape and display the latest jobs.")
